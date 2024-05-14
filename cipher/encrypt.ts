@@ -28,6 +28,7 @@ export const encryptDES = (
 
   let Ln: string = L0,
     Rn: string = R0;
+  // Lập 16 vòng
   array_Kn.forEach((key, index) => {
     const tempRn = Rn;
     const { E_Rn_Binary, XOR_Result, sBox_Binary, P_Binary } = feistel(Rn, key);
@@ -38,7 +39,7 @@ export const encryptDES = (
     array_Rn.push(Rn);
   });
 
-  // Hoán vị IP-1
+  // Hoán vị IP-1 --- Lấy R16+L16 để tính
   const result = permutateByConstants(Rn + Ln, IP_Inverse_Index);
 
   return { array_Ln, array_Rn, result };

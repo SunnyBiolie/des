@@ -2,7 +2,6 @@
 
 import {
   ElementRef,
-  useEffect,
   useRef,
   useState,
   type Dispatch,
@@ -46,7 +45,6 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
 
   const [base64, setBase64] = useState<string | null>(null);
   const [action, setAction] = useState<"encrypt" | "decrypt">("encrypt");
-  const [isLoading, setIsLoading] = useState<boolean | null>(null);
 
   const form = useForm<z.infer<typeof formFileSchema>>({
     resolver: zodResolver(formFileSchema),
@@ -56,9 +54,9 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
   });
 
   function onSubmit(values: z.infer<typeof formFileSchema>) {
-    const { array_Kn } = generateKeys(values.key);
-    setKeys(array_Kn);
     if (base64) {
+      const { array_Kn } = generateKeys(values.key);
+      setKeys(array_Kn);
       const prefix = base64.split("base64,")[0] + "base64,";
       let resOfBase64 = base64.split("base64,")[1];
 
@@ -71,6 +69,8 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
           Math.floor(base64Length / 2 / (step + 16)) < 2000
             ? Math.floor(base64Length / 2 / (step + 16))
             : 2000;
+
+        console.log("Encrypt", "\nSố lần chạy:", loopTime, "\nProcessing...");
 
         const encrypt = (index: number) => {
           let message = "";
@@ -96,12 +96,11 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
           loopTime.toString().padStart(4, "0") +
           resOfBase64.substring(500);
 
-        console.log(resOfBase64);
-
         downloadPDF(prefix, resOfBase64, "encrypted");
       } else if (action === "decrypt") {
         const loopTime = +resOfBase64.slice(500, 504);
-        console.log(loopTime);
+
+        console.log("Decrypt", "\nSố lần chạy:", loopTime, "\nProcessing...");
 
         resOfBase64 =
           resOfBase64.substring(0, 500) + resOfBase64.substring(504);
@@ -113,12 +112,8 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
           }
 
           const result = decryptDES(message, array_Kn);
-          // setResult(result);
 
           const text = hexToText(binToHex(result.result));
-
-          // console.log("decrypt result:", binToHex(result.result));
-          // console.log(hexToText(binToHex(result.result)));
 
           resOfBase64 =
             resOfBase64.substring(0, index) +
@@ -129,15 +124,13 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
         const step = 64 - 8;
         const startIndex = 1000;
         for (let i = startIndex; i <= startIndex + step * loopTime; i += step) {
-          console.log(i);
           decrypt(i);
         }
-
-        // console.log(base64);
 
         downloadPDF(prefix, resOfBase64, "decrypted");
       }
     }
+    console.log("Done");
   }
 
   function downloadPDF(prefix: string, resOfBase64: string, filename: string) {
@@ -146,9 +139,6 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
     const fileName = `${filename}.pdf`;
     downloadLink.href = linkSource;
     downloadLink.download = fileName;
-    downloadLink.onclick = () => {
-      console.log("click");
-    };
     downloadLink.click();
   }
 
@@ -167,6 +157,7 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
         fileReader.onload = function (fileLoadedEvent) {
           base64 = fileLoadedEvent.target!.result as string;
           setBase64(base64);
+
           console.log(base64);
           console.log(base64.length);
         };
@@ -227,20 +218,14 @@ export const FormFile = ({ setKeys, setResult }: FormHexProps) => {
               <Label>Decrypt</Label>
             </div>
           </RadioGroup>
-          <Button
-            type="submit"
-            disabled={base64 ? false : true}
-            onClick={() => setIsLoading(true)}
-          >
+          <Button type="submit" disabled={base64 ? false : true}>
             Submit
           </Button>
         </form>
       </Form>
-      {isLoading && (
-        <div className="fixed top-0 left-0 size-full flex flex-col items-center justify-center bg-slate-950/50 z-50">
+      {/* <div className="fixed top-0 left-0 size-full flex flex-col items-center justify-center bg-slate-950/50 z-50">
           <LoaderCircle className="size-8 animate-spin" />
-        </div>
-      )}
+        </div> */}
     </div>
   );
 };
